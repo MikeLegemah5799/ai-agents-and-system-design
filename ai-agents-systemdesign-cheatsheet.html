@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agents & System Design — Principal-Level Reference</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai-sublime.min.css">
+<style>
+  :root{
+    --canvas:#2d2a2e;
+    --surface:#353236;
+    --surface-2:#3e3a3f;
+    --line:#4a464b;
+    --cyan:#78dce8;
+    --green:#a9dc76;
+    --pink:#ff6188;
+    --yellow:#ffd866;
+    --orange:#fc9867;
+    --purple:#ab9df2;
+    --text:#fcfcfa;
+    --text-dim:#a8a2a8;
+    --mono: 'IBM Plex Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--canvas);color:var(--text);font-family:var(--sans);}
+  body{display:flex;min-height:100vh;}
+
+  #sidebar{
+    width:250px;flex-shrink:0;background:#262326;border-right:1px solid var(--line);
+    padding:20px 14px;position:sticky;top:0;height:100vh;overflow-y:auto;
+  }
+  .brand{font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--text-dim);margin-bottom:2px;}
+  .brand-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:18px;line-height:1.3;}
+  .brand-title span{color:var(--cyan);}
+  #search{
+    width:100%;background:var(--surface);border:1px solid var(--line);color:var(--text);
+    padding:9px 10px;border-radius:6px;font-family:var(--sans);font-size:13px;margin-bottom:16px;
+  }
+  #search:focus{outline:none;border-color:var(--cyan);}
+  .nav-group-label{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--text-dim);margin:14px 4px 6px;text-transform:uppercase;}
+  .nav-group-label:first-child{margin-top:0;}
+  .nav-item{
+    display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:6px;cursor:pointer;
+    font-size:13px;color:var(--text-dim);margin-bottom:1px;transition:background .12s,color .12s;
+  }
+  .nav-item:hover{background:var(--surface);color:var(--text);}
+  .nav-item.active{background:var(--surface-2);color:var(--cyan);}
+  .nav-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .mode-toggle{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);}
+  .mode-btn{
+    width:100%;background:var(--surface);border:1px solid var(--line);color:var(--text-dim);
+    padding:9px 10px;border-radius:6px;font-family:var(--mono);font-size:11.5px;cursor:pointer;
+    margin-bottom:6px;text-align:left;transition:.12s;
+  }
+  .mode-btn:hover{border-color:var(--cyan);color:var(--text);}
+  .mode-btn.on{background:rgba(120,220,232,.12);border-color:var(--cyan);color:var(--cyan);}
+
+  #main{flex:1;padding:34px 44px 80px;max-width:900px;}
+  #hero{margin-bottom:34px;}
+  #hero h1{font-size:25px;margin:0 0 6px;font-weight:700;}
+  #hero p{color:var(--text-dim);font-size:14px;margin:0;max-width:660px;line-height:1.55;}
+
+  .section{margin-bottom:46px;scroll-margin-top:24px;}
+  .section-head{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;padding-bottom:9px;border-bottom:1px solid var(--line);}
+  .section-head h2{font-size:18px;margin:0;font-weight:700;}
+  .section-head .tag{font-family:var(--mono);font-size:10.5px;color:var(--canvas);padding:2px 7px;border-radius:4px;font-weight:700;}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:8px;margin-bottom:10px;overflow:hidden;}
+  .card-q{
+    padding:13px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;
+    font-size:14.5px;font-weight:600;
+  }
+  .card-q:hover{background:var(--surface-2);}
+  .card-q .chev{color:var(--text-dim);font-size:12px;transition:transform .15s;flex-shrink:0;}
+  .card.open .card-q .chev{transform:rotate(90deg);color:var(--cyan);}
+  .card-a{max-height:0;overflow:hidden;transition:max-height .25s ease;}
+  .card.open .card-a{max-height:3600px;}
+  .card-a-inner{padding:2px 16px 16px;font-size:13.6px;line-height:1.62;color:#e6e1e6;}
+  .card-a-inner p{margin:0 0 10px;}
+  .card-a-inner ul{margin:0 0 10px;padding-left:19px;}
+  .card-a-inner li{margin-bottom:6px;}
+  .card-a-inner li b, .card-a-inner b{color:var(--cyan);font-weight:600;}
+  .card-a-inner code{font-family:var(--mono);background:#242226;padding:1px 5px;border-radius:4px;font-size:12.3px;color:var(--orange);}
+  .callout{border-left:3px solid var(--yellow);background:rgba(255,216,102,.06);padding:9px 12px;border-radius:0 6px 6px 0;margin:10px 0;font-size:13px;}
+  .callout b{color:var(--yellow);}
+  .gotcha{border-left:3px solid var(--pink);background:rgba(255,97,136,.07);padding:9px 12px;border-radius:0 6px 6px 0;margin:10px 0;font-size:13px;}
+  .gotcha b{color:var(--pink);}
+  .stack-badge{
+    display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:4px;margin-bottom:10px;
+  }
+  .badge-aws{background:rgba(252,152,103,.15);color:var(--orange);border:1px solid rgba(252,152,103,.4);}
+  .badge-oss{background:rgba(169,220,118,.15);color:var(--green);border:1px solid rgba(169,220,118,.4);}
+
+  pre.code-block{
+    border:1px solid var(--line);border-radius:6px;padding:12px 14px;
+    overflow-x:auto;margin:8px 0 12px;
+  }
+  pre.code-block code.hljs{
+    font-family:var(--mono);font-size:12.2px;line-height:1.55;background:none !important;padding:0;white-space:pre;
+  }
+
+  .hidden{display:none !important;}
+  body.quiz .card-a{max-height:0 !important;}
+  body.quiz .card.revealed .card-a{max-height:3600px !important;}
+  body.quiz .card-q .chev{display:none;}
+  body.quiz .card-q::after{content:"reveal";font-family:var(--mono);font-size:10px;color:var(--text-dim);border:1px solid var(--line);padding:3px 8px;border-radius:4px;flex-shrink:0;}
+  body.quiz .card.revealed .card-q::after{content:"hide";color:var(--cyan);border-color:var(--cyan);}
+
+  @media (max-width:840px){
+    body{flex-direction:column;}
+    #sidebar{position:relative;width:100%;height:auto;max-height:none;border-right:none;border-bottom:1px solid var(--line);}
+    #main{padding:24px 18px 60px;}
+  }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div class="brand">MLEG.TECH</div>
+  <div class="brand-title">AI Agents &<br><span>System Design</span></div>
+  <input id="search" type="text" placeholder="Search cards…" oninput="filterCards(this.value)">
+  <div id="nav"></div>
+  <div class="mode-toggle">
+    <button class="mode-btn" id="quizBtn" onclick="toggleQuiz()">◆ FLASHCARD MODE</button>
+    <button class="mode-btn" onclick="expandAll()">▸ EXPAND ALL</button>
+    <button class="mode-btn" onclick="collapseAll()">▾ COLLAPSE ALL</button>
+  </div>
+</div>
+
+<div id="main">
+  <div id="hero">
+    <h1>AI Agents & System Design — Principal-Level Reference</h1>
+    <p>Python patterns for LangGraph, AWS Bedrock/AgentCore, CrewAI, and vector databases — plus four full system designs (AWS stack and open-source stack for each) covering latency, cost, scalability, caching, retries, security, and failure recovery. Toggle flashcard mode in the sidebar to quiz yourself.</p>
+  </div>
+  <div id="content"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function code(str, lang='python'){ return `<pre class="code-block"><code class="language-${lang}">${esc(str.trim())}</code></pre>`; }
+
+const DATA = [
+{
+  id:"langgraph-py", title:"LangGraph — Python Patterns", color:"#78dce8",
+  cards:[
+    {q:"Basic StateGraph: state, nodes, conditional routing", a:`
+      <p>The core skeleton for any LangGraph agent — a typed state, a model-calling node, a routing function, and a tool node wired in a loop:</p>
+      ${code(`from typing import TypedDict, Annotated
+import operator
+from langgraph.graph import StateGraph, END
+
+class AgentState(TypedDict):
+    messages: Annotated[list, operator.add]
+
+def call_model(state: AgentState):
+    response = llm.invoke(state["messages"])
+    return {"messages": [response]}
+
+def route(state: AgentState) -> str:
+    last = state["messages"][-1]
+    return "tools" if last.tool_calls else END
+
+graph = StateGraph(AgentState)
+graph.add_node("agent", call_model)
+graph.add_node("tools", tool_node)
+graph.set_entry_point("agent")
+graph.add_conditional_edges("agent", route, {"tools": "tools", END: END})
+graph.add_edge("tools", "agent")
+app = graph.compile()`)}
+      <p>The <code>Annotated[list, operator.add]</code> reducer is what makes concurrent writes to <code>messages</code> append instead of overwrite — see the Race Conditions card on the AI Engineering cheat sheet for why this matters.</p>`},
+    {q:"Checkpointing + human-in-the-loop approval", a:`
+      <p>Persist state at every step and pause before a sensitive action until a human resumes the run:</p>
+      ${code(`from langgraph.checkpoint.postgres import PostgresSaver
+
+checkpointer = PostgresSaver.from_conn_string(DB_URL)
+app = graph.compile(
+    checkpointer=checkpointer,
+    interrupt_before=["execute_payment"],
+)
+
+config = {"configurable": {"thread_id": "user-123"}}
+app.invoke({"messages": [user_msg]}, config)
+# execution pauses before execute_payment — resume after approval:
+app.invoke(None, config)`)}
+      <p>This is the same primitive that gives you crash recovery in production — a killed process resumes from the last checkpoint instead of restarting the whole conversation.</p>`},
+    {q:"Fan-out / parallel execution with Send", a:`
+      <p>Dynamically spawn N parallel node executions — the map-reduce pattern for e.g. grading relevance of every retrieved doc in parallel:</p>
+      ${code(`from langgraph.constants import Send
+
+def fan_out(state):
+    return [Send("critique_doc", {"doc": d}) for d in state["retrieved_docs"]]
+
+graph.add_conditional_edges("router", fan_out)`)}
+      <div class="callout"><b>Reminder:</b> any state key multiple branches write to needs a reducer, or you'll silently drop concurrent output.</div>`},
+    {q:"Multi-agent supervisor as a subgraph", a:`
+      <p>Compose specialist agents as compiled subgraphs, invoked from a router node — the code-level version of the supervisor pattern:</p>
+      ${code(`research_app = research_graph.compile()
+writer_app = writer_graph.compile()
+
+def supervisor(state):
+    if state["needs_research"]:
+        return "research"
+    return "writer"
+
+graph.add_node("research", research_app)
+graph.add_node("writer", writer_app)
+graph.add_conditional_edges("supervisor", supervisor, {"research": "research", "writer": "writer"})`)}`}
+  ]
+},
+{
+  id:"aws-stack", title:"AWS AI Stack — Bedrock & AgentCore", color:"#fc9867",
+  cards:[
+    {q:"Invoking a foundation model via Bedrock", a:`
+      ${code(`import boto3
+
+bedrock = boto3.client("bedrock-runtime", region_name="us-east-1")
+
+response = bedrock.converse(
+    modelId="anthropic.claude-sonnet-4-5-20250929-v1:0",
+    messages=[{"role": "user", "content": [{"text": "Summarize this ticket."}]}],
+    inferenceConfig={"maxTokens": 1000, "temperature": 0.2},
+)
+print(response["output"]["message"]["content"][0]["text"])`)}
+      <p>The unified <code>converse</code> API works across Bedrock's model providers (Anthropic, Meta, Amazon Titan, etc.) — one interface regardless of which model you route a given call to.</p>`},
+    {q:"Bedrock Agents vs AgentCore — the actual distinction", a:`
+      <ul>
+        <li><b>Bedrock Agents</b> — fully managed: AWS runs the reasoning loop, action groups (Lambda-backed tools), and knowledge base retrieval for you. Less orchestration code, but you trade away fine-grained control over the loop itself.</li>
+        <li><b>AgentCore</b> — a managed <i>runtime</i> for hosting your <i>own</i> agent code (e.g. a custom LangGraph app) with managed session state, identity, and observability — without AWS owning your orchestration logic. The middle ground between "fully managed Bedrock Agents" and "roll your own on raw EC2/Lambda."</li>
+      </ul>
+      ${code(`# Invoking a Bedrock Agent
+client = boto3.client("bedrock-agent-runtime")
+response = client.invoke_agent(
+    agentId=AGENT_ID,
+    agentAliasId=ALIAS_ID,
+    sessionId=session_id,
+    inputText="What's the status of order #4521?",
+)`)}
+      <div class="callout"><b>Choosing between them:</b> reach for Bedrock Agents when the action-group/knowledge-base abstraction fits your use case as-is; reach for AgentCore when you already have (or need) custom orchestration logic — e.g. a LangGraph app with specific state reducers or a CrewAI crew — and just want AWS to host and secure it.</div>`},
+    {q:"Knowledge Bases for Bedrock — managed RAG", a:`
+      ${code(`kb_client = boto3.client("bedrock-agent-runtime")
+result = kb_client.retrieve_and_generate(
+    input={"text": "What is our refund policy?"},
+    retrieveAndGenerateConfiguration={
+        "type": "KNOWLEDGE_BASE",
+        "knowledgeBaseConfiguration": {
+            "knowledgeBaseId": KB_ID,
+            "modelArn": MODEL_ARN,
+        },
+    },
+)`)}
+      <p>Bedrock manages the ingestion pipeline end to end — chunking, embedding, and the vector store itself (OpenSearch Serverless, Aurora pgvector, or Pinecone as a supported backend). You trade chunking-strategy control for ops simplicity — fine for a standard doc corpus, worth dropping to a custom pipeline once your eval set shows chunking is the bottleneck (see the Chunking Strategies card on the AI Engineering cheat sheet).</p>`}
+  ]
+},
+{
+  id:"crewai-py", title:"CrewAI — Python Patterns", color:"#ab9df2",
+  cards:[
+    {q:"Defining agents, tasks, and a crew", a:`
+      ${code(`from crewai import Agent, Task, Crew, Process
+
+researcher = Agent(
+    role="Research Analyst",
+    goal="Find accurate, current information on {topic}",
+    backstory="Expert at web research and synthesis.",
+    tools=[search_tool],
+    llm=llm,
+)
+
+writer = Agent(
+    role="Technical Writer",
+    goal="Turn research into a clear summary",
+    backstory="Writes concise technical reports.",
+)
+
+research_task = Task(
+    description="Research {topic} and list the top 5 findings.",
+    agent=researcher,
+    expected_output="A bullet list of 5 findings with sources.",
+)
+
+write_task = Task(
+    description="Write a 200-word summary from the research.",
+    agent=writer,
+    context=[research_task],
+)
+
+crew = Crew(
+    agents=[researcher, writer],
+    tasks=[research_task, write_task],
+    process=Process.sequential,
+)
+
+result = crew.kickoff(inputs={"topic": "vector database benchmarks 2026"})`)}`},
+    {q:"Sequential vs hierarchical process", a:`
+      ${code(`manager = Agent(role="Manager", goal="Coordinate the crew", allow_delegation=True)
+
+crew = Crew(
+    agents=[researcher, writer],
+    tasks=[research_task, write_task],
+    process=Process.hierarchical,
+    manager_agent=manager,
+)`)}
+      <p><code>Process.hierarchical</code> is CrewAI's built-in version of the supervisor pattern — the manager agent delegates and can dynamically re-route tasks, instead of a fixed sequential order. Use sequential when the workflow is genuinely linear; hierarchical when task routing itself needs judgment.</p>`},
+    {q:"CrewAI vs LangGraph — when to reach for which", a:`
+      <ul>
+        <li><b>CrewAI</b>: higher-level role/task abstraction, fast to stand up a sequential or hierarchical crew, less granular control over exact control flow or how concurrent state merges.</li>
+        <li><b>LangGraph</b>: lower-level graph primitives — full control over state, cycles, conditional routing, checkpointing, and custom reducers.</li>
+      </ul>
+      <div class="callout"><b>Rule of thumb:</b> prototyping or a demo multi-agent crew → CrewAI. Production agent with strict state/observability/human-in-the-loop requirements → LangGraph. They're not mutually exclusive — some teams prototype the agent roles in CrewAI, then port the finalized flow to LangGraph for production hardening.</div>`}
+  ]
+},
+{
+  id:"fastapi-py", title:"FastAPI — Serving Agents in Production", color:"#78dce8",
+  cards:[
+    {q:"Serving a LangGraph agent with streaming responses", a:`
+      ${code(`from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class ChatRequest(BaseModel):
+    message: str
+    thread_id: str
+
+@app.post("/chat")
+async def chat(req: ChatRequest):
+    config = {"configurable": {"thread_id": req.thread_id}}
+
+    async def event_stream():
+        async for chunk in graph_app.astream(
+            {"messages": [("user", req.message)]}, config, stream_mode="messages"
+        ):
+            yield f"data: {chunk[0].content}\\n\\n"
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")`)}
+      <p>Streaming keeps time-to-first-token low on the client even though the full agent run can take several seconds end to end (cross-ref the Latency card in the Cross-Cutting section).</p>`},
+    {q:"Auth as a dependency (Cognito/JWT)", a:`
+      ${code(`from fastapi import Depends, HTTPException, Header
+import jwt
+
+async def verify_token(authorization: str = Header(...)) -> dict:
+    token = authorization.replace("Bearer ", "")
+    try:
+        claims = jwt.decode(token, COGNITO_PUBLIC_KEY, algorithms=["RS256"], audience=CLIENT_ID)
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return claims
+
+@app.post("/chat")
+async def chat(req: ChatRequest, claims: dict = Depends(verify_token)):
+    # claims["team"] / claims["role"] flow into the tool-execution layer's
+    # permission filter — never trusted from the request body itself.
+    return await run_agent(req, user_claims=claims)`)}
+      <p>FastAPI's dependency injection is what makes "pass user claims into every tool call" (cross-ref Securing Agents section) enforceable at the framework level — every route that declares <code>Depends(verify_token)</code> gets it automatically, instead of relying on each endpoint author to remember.</p>`},
+    {q:"Pydantic models double as your API contract", a:`
+      ${code(`class ToolCallLog(BaseModel):
+    tool_name: str
+    arguments: dict
+    result_summary: str
+
+class ChatResponse(BaseModel):
+    answer: str
+    sources: list[str]
+    tool_calls: list[ToolCallLog] = []
+    thread_id: str
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat(req: ChatRequest, claims: dict = Depends(verify_token)):
+    ...`)}
+      <p>The same Pydantic discipline used to constrain LLM structured output (cross-ref the Structured Outputs card on the AI Engineering cheat sheet) doubles as the FastAPI response schema — one model definition validated at both the model boundary and the API boundary, instead of two schemas that can silently drift apart.</p>`},
+    {q:"Long-running agent runs: background tasks + polling", a:`
+      ${code(`from fastapi import BackgroundTasks
+import uuid
+
+jobs = {}  # swap for Redis/DynamoDB in production
+
+@app.post("/research")
+async def start_research(req: ChatRequest, background_tasks: BackgroundTasks):
+    job_id = str(uuid.uuid4())
+    jobs[job_id] = {"status": "running"}
+    background_tasks.add_task(run_research_agent, job_id, req.message)
+    return {"job_id": job_id}
+
+@app.get("/research/{job_id}")
+async def get_research(job_id: str):
+    return jobs.get(job_id, {"status": "not_found"})`)}
+      <p>For agent runs that can exceed a reasonable HTTP timeout (a research agent, a document pipeline), don't hold the connection open — kick off the job, return an ID, and let the client poll or connect over a websocket for completion. In production, back <code>jobs</code> with the same checkpointer/queue already backing your LangGraph state, not an in-memory dict (cross-ref the Scalability card).</p>`},
+    {q:"Health checks for orchestrator readiness", a:`
+      ${code(`from fastapi.responses import JSONResponse
+
+@app.get("/healthz")
+async def healthz():
+    return {"status": "ok"}
+
+@app.get("/readyz")
+async def readyz():
+    checks = {
+        "vector_db": await check_vector_db(),
+        "checkpointer": await check_checkpointer_db(),
+        "model_provider": await check_bedrock_connectivity(),
+    }
+    healthy = all(checks.values())
+    return JSONResponse(status_code=200 if healthy else 503, content=checks)`)}
+      <p><code>/healthz</code> (liveness) vs <code>/readyz</code> (readiness, actually pings dependencies) matters for ECS/Kubernetes: a liveness failure restarts the pod; a readiness failure just pulls it out of load-balancer rotation without restarting an otherwise-healthy process that's waiting on a slow dependency.</p>`}
+  ]
+},
+{
+  id:"vectordb-py", title:"Vector Databases — Pinecone & Neon/pgvector", color:"#a9dc76",
+  cards:[
+    {q:"Pinecone: index, upsert, query", a:`
+      ${code(`from pinecone import Pinecone
+
+pc = Pinecone(api_key=PINECONE_API_KEY)
+index = pc.Index("support-docs")
+
+index.upsert(vectors=[
+    {"id": "doc-1", "values": embedding, "metadata": {"source": "faq.md", "team": "billing"}}
+])
+
+results = index.query(
+    vector=query_embedding,
+    top_k=5,
+    filter={"team": {"$eq": "billing"}},
+    include_metadata=True,
+)`)}
+      <p>Fully managed, serverless-billed ANN index (HNSW under the hood) with metadata filtering — good default when vector search is the primary workload and you don't want to operate infra.</p>`},
+    {q:"Neon / pgvector: Postgres as a vector store", a:`
+      ${code(`import psycopg2
+
+conn = psycopg2.connect(NEON_DATABASE_URL)
+cur = conn.cursor()
+cur.execute("""
+    SELECT content, 1 - (embedding <=> %s::vector) AS similarity
+    FROM documents
+    WHERE team = %s
+    ORDER BY embedding <=> %s::vector
+    LIMIT 5
+""", (query_embedding, "billing", query_embedding))`)}
+      <p><code>pgvector</code> gives you vector search inside regular Postgres — the same ACID transactions, joins, and row-level security as the rest of your relational data. Neon adds serverless autoscaling and branching on top. You get relational joins against vectors "for free" — e.g. joining a similarity search directly against a permissions table in one query (see the Securing Agents section).</p>`},
+    {q:"Choosing a vector DB — the actual decision", a:`
+      <ul>
+        <li><b>Pure-play (Pinecone/Weaviate/Qdrant)</b> — choose when vector search is the primary workload at large scale and you want managed ANN performance without operating the infra.</li>
+        <li><b>Postgres-native (pgvector/Neon)</b> — choose when vectors are one part of a broader relational data model and you want transactional consistency plus joins against your existing schema.</li>
+      </ul>
+      <div class="callout"><b>Don't over-index on this choice early:</b> at small-to-medium scale, vector DB selection matters far less than getting chunking and embedding-model quality right. Make this decision with an eval set showing it's actually the bottleneck, not by benchmark-shopping up front.</div>`}
+  ]
+},
+{
+  id:"security-py", title:"Securing Agents — IAM, Cognito, Policies", color:"#ff6188",
+  cards:[
+    {q:"IAM least-privilege for an agent's execution role", a:`
+      ${code(`{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["bedrock:InvokeModel", "bedrock:Converse"],
+      "Resource": "arn:aws:bedrock:*::foundation-model/anthropic.claude-*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["dynamodb:GetItem", "dynamodb:Query"],
+      "Resource": "arn:aws:dynamodb:*:*:table/support-tickets",
+      "Condition": {
+        "StringEquals": { "dynamodb:LeadingKeys": ["\${aws:PrincipalTag/team}"] }
+      }
+    }
+  ]
+}`, 'json')}
+      <p>Scope the agent's execution role to exactly the actions and resources it needs — never attach broad managed policies to an agent identity. Condition keys (like the leading-key example) enforce row-level scoping at the IAM layer itself, not just in application code.</p>`},
+    {q:"Cognito for end-user identity & scoped sessions", a:`
+      ${code(`import boto3
+
+cognito = boto3.client("cognito-idp")
+auth = cognito.initiate_auth(
+    ClientId=CLIENT_ID,
+    AuthFlow="USER_PASSWORD_AUTH",
+    AuthParameters={"USERNAME": user, "PASSWORD": pw},
+)
+id_token = auth["AuthenticationResult"]["IdToken"]`)}
+      <p>Cognito authenticates the human user and issues a token carrying identity claims (e.g. <code>team</code>, <code>role</code>). Pass those claims through to the agent's tool-execution layer so tool calls run with the <i>user's</i> effective permissions — not the agent's own broad service-role permissions.</p>`},
+    {q:"Separating agent identity from user identity (the core pattern)", a:`
+      <p>Two identities, always kept distinct:</p>
+      <ul>
+        <li>The <b>agent's own service role</b> — what infrastructure it's allowed to call at all (Bedrock, DynamoDB, S3, etc.).</li>
+        <li>The <b>acting user's identity</b> — what data/actions that specific user is allowed to touch, scoped per-request.</li>
+      </ul>
+      <p>Enforce user-level permissions at the data layer — row-level security in Postgres, IAM condition keys, or a filter clause on the vector query — never just as a prompt instruction the model might ignore.</p>
+      <div class="gotcha"><b>Critical:</b> treat any instruction embedded in retrieved content as untrusted (cross-ref: Guardrails section on the AI Engineering cheat sheet). Permission checks belong in code, not in the prompt.</div>`},
+    {q:"Secrets & credential handling", a:`
+      <p>Never put API keys or secrets in the system prompt or tool descriptions — inject them at execution time from a secrets manager, scoped per environment.</p>
+      <ul>
+        <li><b>AWS</b>: Secrets Manager / Parameter Store, pulled into the Lambda/ECS task at runtime, rotated on a schedule.</li>
+        <li><b>OSS</b>: same principle via env-injected secrets from your orchestrator (Kubernetes Secrets, Vault, Doppler).</li>
+      </ul>
+      <p>Never log full request/response payloads that could carry a secret or PII forward into a tool result — this is a guardrails gap teams commonly miss (cross-ref: Output Validation card).</p>`}
+  ]
+},
+{
+  id:"crosscutting", title:"Cross-Cutting: Latency, Cost, Scalability, Caching, Retries, Monitoring, Recovery", color:"#ffd866",
+  cards:[
+    {q:"Latency", a:`
+      <ul>
+        <li>Stream responses for perceived responsiveness (optimize time-to-first-token, not just total time).</li>
+        <li>Run independent steps concurrently instead of sequentially:</li>
+      </ul>
+      ${code(`import asyncio
+results = await asyncio.gather(
+    retrieve_docs(query),
+    fetch_user_context(user_id),
+)`)}
+      <ul>
+        <li>Model routing — cheap/fast model for simple steps, frontier model reserved for the step that needs deep reasoning.</li>
+        <li>Prompt caching for large static context (system prompt, tool schemas) reused across calls.</li>
+        <li>Use the trace waterfall to find out whether latency actually lives in the model call, a tool/API call, or retrieval — before optimizing anything.</li>
+      </ul>`},
+    {q:"Cost", a:`
+      <ul>
+        <li>Prompt caching (Bedrock / Anthropic) for repeated static context — cuts cost on the cached portion of every call.</li>
+        <li>Model tiering/routing: small model for classification/routing steps, large model only where it earns its cost.</li>
+        <li>Truncate tool results to summaries/IDs rather than raw payloads (token-budget discipline).</li>
+        <li>Batch inference (e.g. Bedrock Batch) for non-interactive, high-volume workloads instead of paying real-time pricing.</li>
+        <li>Monitor cost per-call and per-conversation as an SLO, not just a monthly bill surprise.</li>
+      </ul>`},
+    {q:"Scalability", a:`
+      <ul>
+        <li>Keep the orchestration layer stateless — horizontal scaling via Lambda/Fargate/Kubernetes HPA, not a single long-lived process holding state in memory.</li>
+        <li>Externalize session/conversation state to a checkpointer (Postgres, DynamoDB) so any instance can pick up any session.</li>
+        <li>Vector store autoscaling: Pinecone serverless, Neon autoscaling, or OpenSearch Serverless — avoid fixed-capacity provisioning for spiky workloads.</li>
+        <li>Decouple long-running or bursty work with a queue (SQS/RabbitMQ) rather than handling it synchronously in the request path.</li>
+      </ul>`},
+    {q:"Caching", a:`
+      <ul>
+        <li><b>Semantic caching</b> — cache LLM responses keyed by embedding-similarity of the query, not exact string match, so paraphrased repeats still hit the cache.</li>
+        <li><b>Retrieval-result caching</b> keyed by query+filters, for high-frequency questions.</li>
+        <li><b>Prompt caching</b> for static system prompt / tool schema content (cross-ref Token Budget card on the AI Engineering cheat sheet).</li>
+      </ul>
+      ${code(`cache_key = semantic_hash(query_embedding, similarity_threshold=0.95)
+if cached := redis_client.get(cache_key):
+    return cached`)}`},
+    {q:"Retries & idempotency", a:`
+      ${code(`from tenacity import retry, wait_exponential, stop_after_attempt
+
+@retry(wait=wait_exponential(multiplier=1, min=2, max=30), stop=stop_after_attempt(5))
+def call_bedrock(prompt):
+    return bedrock.converse(...)`)}
+      <ul>
+        <li>Exponential backoff with jitter for transient errors (throttling, timeouts).</li>
+        <li>Circuit breaker to stop hammering a downstream tool/API that's actively failing.</li>
+        <li><b>Idempotency keys for any side-effecting tool call</b> — assume at-least-once delivery, so a retried call must be a safe no-op, not a duplicate charge/booking (cross-ref Race Conditions card).</li>
+      </ul>`},
+    {q:"Monitoring & observability", a:`
+      <ul>
+        <li><b>AWS</b>: CloudWatch metrics/alarms on Bedrock invocations, X-Ray tracing across Lambda/Step Functions, Bedrock invocation logging to S3.</li>
+        <li><b>OSS</b>: LangSmith or Langfuse for LLM/agent tracing, OpenTelemetry for cross-service traces, Prometheus + Grafana for latency and cost dashboards.</li>
+        <li>Track the eval metrics (faithfulness, task completion, tool-call accuracy — see the Evaluation section on the AI Engineering cheat sheet) via production sampling, not just offline eval runs.</li>
+      </ul>`},
+    {q:"Failure recovery", a:`
+      <ul>
+        <li><b>Graceful degradation</b> — if a tool/API is down, fall back to a cached or approximate answer rather than hard-failing the whole conversation.</li>
+        <li><b>Dead-letter queues</b> for tasks that fail repeatedly, routed to human review instead of silently dropped or infinitely retried.</li>
+        <li><b>Checkpointed state</b> (LangGraph's checkpointer, Step Functions execution history) means a crashed process resumes from the last successful step, not the beginning.</li>
+        <li><b>Circuit breakers</b> to stop cascading failure when a downstream dependency is degraded, instead of every request piling up against a dying service.</li>
+      </ul>`}
+  ]
+},
+{
+  id:"sysdesign-support-rag", title:"System Design: Customer-Support RAG", color:"#78dce8",
+  cards:[
+    {q:"AWS Architecture", a:`
+      <span class="stack-badge badge-aws">AWS STACK</span>
+      <ul>
+        <li><b>Ingestion</b>: support docs → S3 → Bedrock Knowledge Base (managed chunk + embed) → OpenSearch Serverless vector index.</li>
+        <li><b>Query flow</b>: API Gateway → Lambda (validates Cognito JWT) → Bedrock <code>retrieve_and_generate</code> (KB + Claude) → streamed response.</li>
+        <li><b>Security</b>: Cognito user pools for auth; IAM role scoped to the specific KB + model ARN; KB metadata filter (team/tier) matched against the user's Cognito claims so retrieval is permission-scoped, not just the final answer.</li>
+        <li><b>Scalability</b>: Lambda and OpenSearch Serverless both auto-scale; Bedrock itself is fully managed — no capacity planning for the model layer.</li>
+        <li><b>Caching</b>: common FAQ answers cached in DynamoDB/ElastiCache, keyed by a semantic hash of the query.</li>
+        <li><b>Monitoring</b>: CloudWatch + Bedrock invocation logs; X-Ray trace across API Gateway → Lambda → Bedrock.</li>
+        <li><b>Failure recovery</b>: Lambda retry with a DLQ to SQS for failed requests; explicit "escalate to human agent" fallback tool when KB retrieval confidence is low.</li>
+      </ul>`},
+    {q:"Open-Source Architecture", a:`
+      <span class="stack-badge badge-oss">OSS STACK</span>
+      <ul>
+        <li><b>Ingestion</b>: docs → custom chunking pipeline (recursive/contextual splitting) → embedding model → pgvector on self-hosted Postgres or Neon.</li>
+        <li><b>Orchestration</b>: FastAPI service running a LangGraph app — retrieve → grade relevance (CRAG-style) → generate → cite sources.</li>
+        <li><b>Auth</b>: Keycloak or Auth0 issuing JWTs; claims passed into the retrieval query's <code>WHERE team = claims.team</code> filter.</li>
+        <li><b>Scalability</b>: Kubernetes HPA on the FastAPI/agent pods; Neon autoscaling for Postgres; Redis for the semantic response cache.</li>
+        <li><b>Monitoring</b>: Langfuse or LangSmith tracing on every run; Prometheus/Grafana dashboards for latency and token cost.</li>
+        <li><b>Failure recovery</b>: circuit breaker around the vector DB call; fallback to keyword search (<code>pg_trgm</code>/BM25) if the embedding service is down; conversation state checkpointed in Postgres so a crash doesn't lose the session.</li>
+      </ul>`}
+  ]
+},
+{
+  id:"sysdesign-research-agent", title:"System Design: AI Research Agent", color:"#a9dc76",
+  cards:[
+    {q:"AWS Architecture", a:`
+      <span class="stack-badge badge-aws">AWS STACK</span>
+      <ul>
+        <li><b>Orchestration</b>: AgentCore-hosted custom LangGraph app (managed runtime/session state), or Bedrock Agents with action groups if the built-in abstraction fits.</li>
+        <li><b>Tools</b>: Lambda-backed action groups — <code>web_search</code>, <code>summarize</code>, <code>cite</code> — each with its own least-privilege IAM role.</li>
+        <li><b>State/memory</b>: AgentCore session state or DynamoDB for long-running research sessions that outlive a single request.</li>
+        <li><b>Cost control</b>: model routing — a Haiku-tier model for search-query generation and intermediate summarization, Sonnet/Opus-tier reserved for final synthesis.</li>
+        <li><b>Monitoring</b>: CloudWatch + Bedrock invocation logging; if orchestrated via Step Functions instead of long-lived compute, X-Ray traces the full multi-step chain.</li>
+        <li><b>Failure recovery</b>: Step Functions per-state retry/catch; a partial-results fallback with an explicit "research incomplete" note if a sub-task times out, instead of hanging indefinitely.</li>
+      </ul>`},
+    {q:"Open-Source Architecture", a:`
+      <span class="stack-badge badge-oss">OSS STACK</span>
+      <ul>
+        <li><b>Orchestration</b>: LangGraph with a supervisor node routing between a search sub-agent and a synthesis sub-agent (true multi-agent — cross-ref the Agents section).</li>
+        <li><b>Tools</b>: Tavily/SerpAPI for search, a custom scraping tool, each registered as a LangGraph tool node with its own error handling.</li>
+        <li><b>State</b>: checkpointed via <code>PostgresSaver</code> so a long research task can be paused and resumed rather than run as one blocking call.</li>
+        <li><b>Deployment</b>: containerized on ECS/Fargate or Kubernetes, with an SQS-backed worker pool for long-running research jobs instead of a synchronous HTTP request.</li>
+        <li><b>Monitoring</b>: Langfuse tracing across the full multi-agent trajectory, with a per-session cost dashboard — open-ended research loops are the textbook case for token budget blowing up unnoticed.</li>
+        <li><b>Failure recovery</b>: a hard max-iteration cap with a "best-effort summary" fallback node if the loop doesn't converge; a dead-letter queue for jobs that error out, routed to a retry-with-backoff worker.</li>
+      </ul>`}
+  ]
+},
+{
+  id:"sysdesign-doc-intel", title:"System Design: Document Intelligence Platform", color:"#ff6188",
+  cards:[
+    {q:"AWS Architecture", a:`
+      <span class="stack-badge badge-aws">AWS STACK</span>
+      <ul>
+        <li><b>Ingestion</b>: documents → S3 → Textract (OCR/layout extraction) → Bedrock for structured extraction (Pydantic-schema-constrained output) → results in DynamoDB, embeddings into OpenSearch/Pinecone for downstream Q&A.</li>
+        <li><b>Async pipeline</b>: S3 event → SQS → Lambda/Step Functions for extraction — decouples bursty ingestion (e.g. a bulk upload of thousands of contracts) from fixed processing capacity.</li>
+        <li><b>Security</b>: per-stage IAM scoping; S3 bucket policies + KMS encryption at rest; Cognito for platform users; document-level access enforced via a DynamoDB permissions table joined at query time.</li>
+        <li><b>Cost</b>: Textract's async/batch API for large backlogs instead of the sync API; model routing — cheap model for classification, frontier model only for complex clause extraction.</li>
+        <li><b>Monitoring</b>: CloudWatch metrics per pipeline stage; DLQ-depth alarms for documents stuck in processing.</li>
+        <li><b>Failure recovery</b>: per-document DLQ + reprocessing queue; extraction results saved incrementally so a mid-document failure doesn't lose earlier progress on that same document.</li>
+      </ul>`},
+    {q:"Open-Source Architecture", a:`
+      <span class="stack-badge badge-oss">OSS STACK</span>
+      <ul>
+        <li><b>Ingestion/OCR</b>: unstructured.io or open OCR (Tesseract/docTR) for layout-aware parsing of PDFs/scans.</li>
+        <li><b>Extraction</b>: LLM with Pydantic-enforced structured output (via the Instructor library) for consistent, validated field extraction.</li>
+        <li><b>Storage</b>: Postgres for structured extraction results <i>and</i> pgvector for embedded chunks — one database for both, simpler ops than separate stores.</li>
+        <li><b>Pipeline orchestration</b>: Celery/RQ workers consuming from Redis or RabbitMQ, horizontally scaled based on queue depth.</li>
+        <li><b>Security</b>: row-level security policies in Postgres enforce document ACLs in the same query that performs the vector search — permission and retrieval logic live together, not in two places that can drift.</li>
+        <li><b>Monitoring</b>: Prometheus queue-depth metrics; OpenTelemetry/Langfuse tracing per document as it moves through the pipeline.</li>
+        <li><b>Failure recovery</b>: per-document retry queue with exponential backoff; poison-message handling after N failures routes to a manual-review queue instead of blocking the whole pipeline.</li>
+      </ul>`}
+  ]
+},
+{
+  id:"sysdesign-multi-agent", title:"System Design: Multi-Agent Workflow", color:"#ffd866",
+  cards:[
+    {q:"AWS Architecture", a:`
+      <span class="stack-badge badge-aws">AWS STACK</span>
+      <ul>
+        <li><b>Orchestration</b>: Step Functions as the top-level supervisor/state machine (explicit, auditable state transitions), invoking Bedrock/AgentCore-hosted specialist agents per state — or a single AgentCore-hosted LangGraph supervisor if you'd rather keep orchestration logic in code than a state machine.</li>
+        <li><b>Inter-agent comms</b>: the A2A protocol if specialist agents are owned by different teams/services; direct Lambda/Step Functions invocation if they're all part of one system.</li>
+        <li><b>State</b>: each specialist's output persisted to DynamoDB/S3 as an artifact and <i>referenced</i> (not resent in full) by the next stage — token-budget discipline enforced at the architecture level, not just the prompt level.</li>
+        <li><b>Security</b>: each specialist agent gets its own least-privilege IAM role — the research agent physically cannot call the "send email" tool that only the drafting agent's role permits.</li>
+        <li><b>Monitoring</b>: Step Functions execution history gives a built-in visual trace of the entire multi-agent run; CloudWatch alarms per state.</li>
+        <li><b>Failure recovery</b>: native per-state retry/catch in Step Functions; a human-review state (SNS/SES notification + manual resume) triggered when a specialist agent's confidence is low or it errors out after retries.</li>
+      </ul>`},
+    {q:"Open-Source Architecture", a:`
+      <span class="stack-badge badge-oss">OSS STACK</span>
+      <ul>
+        <li><b>Orchestration</b>: LangGraph supervisor graph with specialist sub-agents as subgraphs — or CrewAI's hierarchical process for a faster-to-build version of the same pattern.</li>
+        <li><b>State</b>: <code>PostgresSaver</code> checkpointing so the entire multi-agent run can be paused, inspected, and resumed — genuine time-travel debugging on a bad run.</li>
+        <li><b>Inter-agent comms</b>: in-process function calls between subgraphs for a single-service deployment; gRPC or A2A over HTTP if specialist agents are separately deployed services owned by different teams.</li>
+        <li><b>Security</b>: separate service accounts/API keys per specialist agent's tool set, enforced at the tool-execution layer — never just trusted because the prompt says so.</li>
+        <li><b>Monitoring</b>: Langfuse/LangSmith trace spanning the full supervisor → specialist → supervisor trajectory, with a per-agent token/cost breakdown.</li>
+        <li><b>Failure recovery</b>: reducer-defined state merge (cross-ref Race Conditions card) prevents silent data loss when parallel specialist branches write back concurrently; a max-retry-then-escalate-to-human pattern owned by the supervisor node.</li>
+      </ul>`}
+  ]
+},
+{
+  id:"sysdesign-eval-pipeline", title:"System Design: Eval Pipeline / Harness in CI/CD", color:"#ff6188",
+  cards:[
+    {q:"What the harness actually gates", a:`
+      <p>A production eval harness runs the full metric set from the Evaluation Concepts section — relevance, faithfulness, task completion, tool-call accuracy — against a <b>versioned golden dataset</b> of representative queries and expected outputs/rubrics, on every candidate change (a prompt edit, a model swap, a retrieval-pipeline change).</p>
+      <ul>
+        <li>Scores are compared against a fixed threshold or the current production baseline — a regression on any metric beyond tolerance <b>fails the build</b>, exactly like a failing unit test.</li>
+        <li>Latency and cost are tracked as first-class metrics alongside quality — a prompt change that improves faithfulness but doubles token cost is still a regression worth flagging, not a free win.</li>
+        <li>The golden dataset itself lives in version control and goes through code review when it changes — an eval set nobody can audit is not a trustworthy gate.</li>
+      </ul>`},
+    {q:"Eval harness code (provider-agnostic)", a:`
+      ${code(`import json
+from ragas import evaluate
+from ragas.metrics import faithfulness, answer_relevancy
+from datasets import Dataset
+
+golden = json.load(open("eval/golden_set.json"))
+# [{question, contexts, answer, ground_truth}, ...]
+
+results = []
+for item in golden:
+    output = run_agent(item["question"])
+    results.append({
+        "question": item["question"],
+        "answer": output["answer"],
+        "contexts": output["retrieved_contexts"],
+        "ground_truth": item["ground_truth"],
+    })
+
+dataset = Dataset.from_list(results)
+scores = evaluate(dataset, metrics=[faithfulness, answer_relevancy])
+
+REQUIRED = {"faithfulness": 0.85, "answer_relevancy": 0.80}
+failures = [m for m, t in REQUIRED.items() if scores[m] < t]
+if failures:
+    raise SystemExit(f"Eval regression on: {failures}")`)}`},
+    {q:"CI gate (GitHub Actions)", a:`
+      ${code(`name: eval-gate
+on: pull_request
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt
+      - name: Run eval harness against golden set
+        run: python eval/run_eval.py
+        env:
+          BEDROCK_API_KEY: \${{ secrets.BEDROCK_API_KEY }}
+      - name: Upload eval report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: eval/report.json`, 'yaml')}
+      <p>The job's non-zero exit on regression is what blocks the PR — set it as a <b>required status check</b> on the branch protection rule and merge is physically prevented until the eval passes, the same enforcement model as a code test suite, applied to model/prompt quality.</p>`},
+    {q:"CI gate (GitLab CI)", a:`
+      ${code(`eval-gate:
+  stage: test
+  image: python:3.12
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  script:
+    - pip install -r requirements.txt
+    - python eval/run_eval.py
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths:
+      - eval/report.json`, 'yaml')}
+      <p>Add <code>eval-gate</code> to the target branch's <b>merge request approval / required pipeline</b> settings so GitLab refuses to allow the merge until this job passes — same gating mechanism as GitHub's required status checks, just configured in Settings → Merge requests instead of a repo file.</p>`},
+    {q:"CI gate (Bitbucket Pipelines)", a:`
+      ${code(`pipelines:
+  pull-requests:
+    '**':
+      - step:
+          name: Eval gate
+          image: python:3.12
+          script:
+            - pip install -r requirements.txt
+            - python eval/run_eval.py
+          artifacts:
+            - eval/report.json`, 'yaml')}
+      <p>Pair this with a <b>branch permission rule</b> ("require passing build" on the target branch) in Bitbucket's repository settings — the pipeline step alone only reports status; the branch rule is what actually blocks the merge.</p>`},
+    {q:"CI gate (Jenkins)", a:`
+      ${code(`pipeline {
+    agent { docker { image 'python:3.12' } }
+
+    stages {
+        stage('Install') {
+            steps { sh 'pip install -r requirements.txt' }
+        }
+        stage('Eval Gate') {
+            steps { sh 'python eval/run_eval.py' }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'eval/report.json', allowEmptyArchive: true
+        }
+        failure {
+            slackSend(channel: '#ai-eng-alerts', message: "Eval gate failed on \${env.BRANCH_NAME}")
+        }
+    }
+}`, 'groovy')}
+      <p>This is a declarative <code>Jenkinsfile</code> checked into the repo. A non-zero exit from <code>run_eval.py</code> fails the <code>Eval Gate</code> stage, which fails the build — wire that build result into the PR merge check via the GitHub/Bitbucket branch-source plugin so a red Jenkins build blocks the merge the same way the other three do.</p>`},
+    {q:"AWS Architecture", a:`
+      <span class="stack-badge badge-aws">AWS STACK</span>
+      <ul>
+        <li><b>CI/CD</b>: CodePipeline triggers CodeBuild on every PR and merge to main; CodeBuild runs the eval harness against the golden set, invoking the candidate prompt/model via Bedrock.</li>
+        <li><b>Storage</b>: golden dataset versioned in the same repo (CodeCommit/GitHub) as the prompt code, so eval-set changes are code-reviewed too; run results written to S3 + a DynamoDB table for a queryable history over time — trend, not just latest pass/fail.</li>
+        <li><b>Gating</b>: the CodeBuild step fails the build on threshold miss, which blocks CodePipeline from promoting the change to the deploy stage.</li>
+        <li><b>Versioning</b>: store the exact model ID + prompt version + eval scores together in DynamoDB, so a production rollback can point at a specific known-good combination instead of guessing.</li>
+        <li><b>Monitoring</b>: CloudWatch dashboard plotting eval metrics per build over time; an SNS alert if a metric drifts even while still technically passing threshold — an early warning before it becomes a failed gate.</li>
+        <li><b>Cost</b>: run the full golden set on PR/merge to main; sample a smaller subset for faster feedback on every intermediate commit, full set before deploy.</li>
+      </ul>`},
+    {q:"Open-Source Architecture", a:`
+      <span class="stack-badge badge-oss">OSS STACK</span>
+      <ul>
+        <li><b>CI/CD</b>: GitHub Actions (or GitLab CI) workflow triggered on PR, running the harness shown above.</li>
+        <li><b>Eval framework</b>: Ragas or DeepEval for faithfulness/answer-relevancy/task-completion-style scoring against the golden set; LangSmith or Langfuse datasets + <code>evaluate()</code> as an alternative that also gives trace-level drill-down into any specific failing case.</li>
+        <li><b>Storage</b>: golden dataset versioned in-repo (JSON/YAML) so it goes through the same PR review as code; run history persisted to a Postgres table for querying score trends over time.</li>
+        <li><b>Gating</b>: CI job exits non-zero on regression, configured as a required status check on the branch protection rule — merge is blocked until it passes.</li>
+        <li><b>Monitoring</b>: Grafana dashboard reading eval history from Postgres, tracking metric trend; a Slack webhook alert on regression or on drift approaching the threshold.</li>
+        <li><b>Beyond CI</b>: periodically sample live production traffic into the same eval pipeline, not just CI-time runs against the fixed golden set — this is what catches drift that only shows up under real usage (cross-ref the "How this fits into one eval harness" card on the AI Engineering cheat sheet).</li>
+      </ul>`}
+  ]
+}
+];
+
+const nav = document.getElementById('nav');
+const content = document.getElementById('content');
+const groupLabels = {
+  "langgraph-py":"Frameworks & Code","aws-stack":null,"crewai-py":null,"fastapi-py":null,"vectordb-py":null,"security-py":null,
+  "crosscutting":"Production Concerns",
+  "sysdesign-support-rag":"System Designs","sysdesign-research-agent":null,"sysdesign-doc-intel":null,"sysdesign-multi-agent":null,"sysdesign-eval-pipeline":null
+};
+
+DATA.forEach(sec=>{
+  if(groupLabels[sec.id]){
+    const label = document.createElement('div');
+    label.className='nav-group-label';
+    label.textContent = groupLabels[sec.id];
+    nav.appendChild(label);
+  }
+  const navItem = document.createElement('div');
+  navItem.className='nav-item';
+  navItem.dataset.target = sec.id;
+  navItem.innerHTML = `<span class="nav-dot" style="background:${sec.color}"></span>${sec.title}`;
+  navItem.onclick = ()=>document.getElementById('sec-'+sec.id).scrollIntoView({behavior:'smooth',block:'start'});
+  nav.appendChild(navItem);
+
+  const section = document.createElement('div');
+  section.className='section';
+  section.id='sec-'+sec.id;
+  const head = document.createElement('div');
+  head.className='section-head';
+  head.innerHTML = `<h2>${sec.title}</h2><span class="tag" style="background:${sec.color}">${sec.cards.length} cards</span>`;
+  section.appendChild(head);
+
+  sec.cards.forEach(c=>{
+    const card = document.createElement('div');
+    card.className='card';
+    card.dataset.search = (c.q + ' ' + c.a).toLowerCase();
+    card.innerHTML = `
+      <div class="card-q" onclick="toggleCard(this.parentElement)">
+        <span>${c.q}</span><span class="chev">▶</span>
+      </div>
+      <div class="card-a"><div class="card-a-inner">${c.a}</div></div>`;
+    section.appendChild(card);
+  });
+  content.appendChild(section);
+});
+
+if (window.hljs) { document.querySelectorAll('pre.code-block code').forEach(el => hljs.highlightElement(el)); }
+
+function toggleCard(card){
+  if(document.body.classList.contains('quiz')){ card.classList.toggle('revealed'); }
+  else { card.classList.toggle('open'); }
+}
+function toggleQuiz(){
+  document.body.classList.toggle('quiz');
+  document.getElementById('quizBtn').classList.toggle('on');
+  document.querySelectorAll('.card').forEach(c=>{c.classList.remove('open');c.classList.remove('revealed');});
+}
+function expandAll(){
+  document.body.classList.remove('quiz');
+  document.getElementById('quizBtn').classList.remove('on');
+  document.querySelectorAll('.card').forEach(c=>c.classList.add('open'));
+}
+function collapseAll(){
+  document.querySelectorAll('.card').forEach(c=>{c.classList.remove('open');c.classList.remove('revealed');});
+}
+function filterCards(q){
+  q = q.trim().toLowerCase();
+  document.querySelectorAll('.section').forEach(sec=>{
+    let anyVisible = false;
+    sec.querySelectorAll('.card').forEach(card=>{
+      const match = !q || card.dataset.search.includes(q);
+      card.classList.toggle('hidden', !match);
+      if(match) anyVisible = true;
+      if(match && q) card.classList.add('open');
+    });
+    sec.classList.toggle('hidden', !anyVisible);
+  });
+}
+
+const sections = DATA.map(s=>document.getElementById('sec-'+s.id));
+window.addEventListener('scroll', ()=>{
+  let current = sections[0].id;
+  sections.forEach(s=>{ if(window.scrollY + 80 >= s.offsetTop) current = s.id; });
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    n.classList.toggle('active', 'sec-'+n.dataset.target === current);
+  });
+});
+</script>
+</body>
+</html>
